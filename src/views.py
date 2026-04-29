@@ -1,47 +1,62 @@
-import json
 import pandas as pd
 from typing import List, Dict
 import yfinance as yf
+import logging
+import json
+
+
+logger = logging.getLogger("views")
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler("logs/views.log", "w", encoding="utf-8")
+file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
 
 
 # === 1. Функция: Приветствие по времени ===
 def get_greeting(hour: int) -> str:
     """Возвращает приветствие в зависимости от времени суток."""
     if not 0 <= hour <= 23:
+        logger.error("Некорректный час: %s", hour)
         raise ValueError("Час должен быть в диапазоне от 0 до 23")
+
     if 6 <= hour < 12:
-        return "Доброе утро"
+        greeting = "Доброе утро"
     elif 12 <= hour < 18:
-        return "Добрый день"
+        greeting = "Добрый день"
     elif 18 <= hour < 24:
-        return "Добрый вечер"
-    else:  # 0 <= hour < 6
-        return "Доброй ночи"
+        greeting = "Добрый вечер"
+    else:
+        greeting = "Доброй ночи"
+
+    logger.info("Приветствие по часу %d: '%s'", hour, greeting)
+    return greeting
 
 
-#== = 2.Функция: Обработка карт  и кешбэка == =
-
-
+# == = 2.Функция: Обработка карт  и кешбэка == =
 def process_cards(df: pd.DataFrame) -> List[Dict]:
     """Обрабатывает данные по картам: расходы и кешбэк."""
+    logger.info("Начало обработки данных по картам. Всего строк: %d", len(df))
     cards = []
     # Фильтруем только расходы (отрицательные суммы)
     spending = df[df["Сумма операции"] < 0].copy()
+    logger.debug("Количество расходов (отрицательных сумм): %d", len(spending))
     # Обработка номера карты: замена NaN, удаление * и извлечение последних 4 цифр
     spending["card_last_digits"] = spending["Номер карты"].fillna("").str.replace("*", "").str[-4:]
     # Убираем строки, где номер карты пустой
     spending = spending[spending["card_last_digits"] != ""]
     # Группируем по последним цифрам карты
     grouped = spending.groupby("card_last_digits")["Сумма операции"].sum()
+    logger.debug("Обнаружено карт: %d", len(grouped))
+    cards = []
 
     for last_digits, total in grouped.items():
         total_spent = abs(total)  # Сумма расходов
         cashback = round(total_spent * 0.01, 2)  # 1 рубль на 100 рублей
-        cards.append({
-            "last_digits": last_digits,
-            "total_spent": round(total_spent, 2),
-            "cashback": cashback
-        })
+        cards.append({"last_digits": last_digits, "total_spent": round(total_spent, 2), "cashback": cashback})
+        logger.debug("Карта %s: потрачено %.2f, кешбэк %.2f", last_digits, total_spent, cashback)
+
+    logger.info("Обработка карт завершена. Найдено карт: %d", len(cards))
     return cards
 
 
@@ -59,16 +74,18 @@ def get_top_transactions(df: pd.DataFrame) -> List[Dict]:
 
     transactions = []
     for _, row in top_5.iterrows():
-        transactions.append({
-            "date": row["Дата операции"].strftime("%d.%m.%Y"),
-            "amount": round(row["Сумма операции"], 2),
-            "category": row["Категория"].strip(),
-            "description": row["Описание"] if pd.notna(row["Описание"]) else ""
-        })
+        transactions.append(
+            {
+                "date": row["Дата операции"].strftime("%d.%m.%Y"),
+                "amount": round(row["Сумма операции"], 2),
+                "category": row["Категория"].strip(),
+                "description": row["Описание"] if pd.notna(row["Описание"]) else "",
+            }
+        )
     return transactions
 
 
-# === 4. Функция: Курсы валют (заглушка) ===
+# === 4. Функция: Курсы валют ===
 import requests
 from datetime import datetime
 from typing import List, Dict
@@ -88,6 +105,7 @@ def get_currency_rates() -> List[Dict]:
 
         # Парсим XML
         from xml.etree import ElementTree as ET
+
         root = ET.fromstring(response.content)
 
         # Курс для USD и EUR
@@ -103,10 +121,7 @@ def get_currency_rates() -> List[Dict]:
     except Exception as e:
         # В случае ошибки — возвращаем fallback (например, для офлайн-режима)
         print(f"Ошибка получения курсов валют: {e}")
-        return [
-            {"currency": "USD", "rate": 73.21},
-            {"currency": "EUR", "rate": 87.08}
-        ]
+        return [{"currency": "USD", "rate": 73.21}, {"currency": "EUR", "rate": 87.08}]
 
 
 # === 5. Функция: Цены акций (заглушка) ===
@@ -121,6 +136,8 @@ def get_stock_prices(stock_list: List[str]) -> List[Dict]:
             print(f"Ошибка для {stock}: {e}")
             prices.append({"stock": stock, "price": 0.0})
     return prices
+
+
 # === 🟩 Главная функция ===
 def main(date_input: str = None) -> str:
     try:
@@ -153,11 +170,12 @@ def main(date_input: str = None) -> str:
         df = df.dropna(subset=["Дата операции"])
 
         # Читаем настройки пользователя (заглушка)
-        user_settings_str = '''{
+        user_settings_str = """{
           "user_currencies": ["USD", "EUR"],
           "user_stocks": ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
-        }'''
+        }"""
         import ast
+
         settings = ast.literal_eval(user_settings_str)
         user_stocks = settings["user_stocks"]
 
@@ -168,7 +186,7 @@ def main(date_input: str = None) -> str:
             "cards": process_cards(df),
             "top_transactions": get_top_transactions(df),
             "currency_rates": get_currency_rates(),
-            "stock_prices": get_stock_prices(user_stocks)
+            "stock_prices": get_stock_prices(user_stocks),
         }
 
         return json.dumps(result, ensure_ascii=False, indent=4)
@@ -177,8 +195,8 @@ def main(date_input: str = None) -> str:
         error = {"error": f"Ошибка обработки: {str(e)}"}
         return json.dumps(error, ensure_ascii=False, indent=4)
 
+
 # === Пример вызова ===
 if __name__ == "__main__":
-    # ✅ 1. Автоматически — текущее время
     print("=== Текущее время ===")
     print(main())
