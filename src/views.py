@@ -1,6 +1,5 @@
 import json
 import pandas as pd
-#from datetime import datetime
 from typing import List, Dict
 import yfinance as yf
 
@@ -123,11 +122,16 @@ def get_stock_prices(stock_list: List[str]) -> List[Dict]:
             prices.append({"stock": stock, "price": 0.0})
     return prices
 # === 🟩 Главная функция ===
-def main(date_input: str) -> str:
+def main(date_input: str = None) -> str:
     try:
-        # Парсим входную дату
-        input_dt = datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S")
+        if date_input:
+            input_dt = datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S")
+        else:
+            input_dt = datetime.now()  # 🕒 Автоматически текущее время
+            print(f"Используется текущее время: {input_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+
         hour = input_dt.hour
+        greeting = get_greeting(hour)
 
         # Читаем данные из operations.xlsx
         try:
@@ -160,6 +164,7 @@ def main(date_input: str) -> str:
         # Формируем ответ
         result = {
             "greeting": get_greeting(hour),
+            "current_time": input_dt.strftime("%Y-%m-%d %H:%M:%S"),
             "cards": process_cards(df),
             "top_transactions": get_top_transactions(df),
             "currency_rates": get_currency_rates(),
@@ -174,6 +179,6 @@ def main(date_input: str) -> str:
 
 # === Пример вызова ===
 if __name__ == "__main__":
-    input_time = "2026-04-29 01:43:00"
-    print(main(input_time))
-
+    # ✅ 1. Автоматически — текущее время
+    print("=== Текущее время ===")
+    print(main())
