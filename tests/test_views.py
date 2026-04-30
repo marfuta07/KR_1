@@ -7,7 +7,7 @@ from src.views import (
     get_currency_rates,
     get_stock_prices,
     main,
-)  # ← замените views на имя вашего файла
+)
 
 
 def test_get_greeting():
