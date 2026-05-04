@@ -1,8 +1,6 @@
 import pytest
 import pandas as pd
 import json
-from src.services import search_transactions, load_transactions, df_transactions
-
 import src.services as services
 
 

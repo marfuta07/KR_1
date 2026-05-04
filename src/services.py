@@ -1,7 +1,6 @@
 import pandas as pd
 import json
 import logging
-from typing import List, Dict
 
 df_transactions = None
 
