@@ -1,10 +1,8 @@
 import pytest
 import pandas as pd
 import json
-#import logging
 import src.services as services
 
-#logger = logging.getLogger(__name__)
 
 @pytest.fixture(autouse=True)
 def setup_transactions():
@@ -19,7 +17,6 @@ def setup_transactions():
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
 
     services.df_transactions = df
-    #logger.info("Тестовые данные загружены в src.services.df_transactions")
 
 def test_search_by_description():
     result = services.search_transactions("кофе")
