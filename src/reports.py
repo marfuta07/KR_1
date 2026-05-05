@@ -73,22 +73,11 @@ def main():
     # Путь к файлу
     file_path = r'C:/Users/User/PycharmProjects/KR_1/data/operations.xlsx'
     file_format = 'excel'
-
     # 1. Загрузка данных
     df = load_operations_data(file_path, file_format)
 
     # 2. Предварительная обработка
     df = preprocess_data(df)
-
-    print("\nДиапазон дат в данных:")
-    if not df['Дата операции'].empty:
-        print("Минимальная дата:", df['Дата операции'].min())
-        print("Максимальная дата:", df['Дата операции'].max())
-    else:
-        print("Даты отсутствуют или не распознаны")
-
-    print("\nКоличество транзакций по категории 'Супермаркеты':")
-    print((df['Категория'] == 'Супермаркеты').sum())
 
     # 3. Анализ трат по категории
     category = 'Супермаркеты'
@@ -99,7 +88,6 @@ def main():
 
     # Вариант 2: с текущей датой (раскомментировать, если нужно)
     # result = spending_by_category(df, category)
-
 
     if result.empty:
         print(f"\nВНИМАНИЕ: По категории '{category}' данных не найдено за последние 3 месяца!")
