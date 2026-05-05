@@ -3,7 +3,8 @@ from typing import List, Dict
 import yfinance as yf
 import logging
 import json
-
+import requests
+from datetime import datetime
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.DEBUG)
@@ -86,11 +87,6 @@ def get_top_transactions(df: pd.DataFrame) -> List[Dict]:
 
 
 # === 4. Функция: Курсы валют ===
-import requests
-from datetime import datetime
-from typing import List, Dict
-
-
 def get_currency_rates() -> List[Dict]:
     """
     Получает актуальные курсы валют к рублю от ЦБ РФ.
@@ -138,17 +134,18 @@ def get_stock_prices(stock_list: List[str]) -> List[Dict]:
     return prices
 
 
-# === 🟩 Главная функция ===
+# === Главная функция ===
 def main(date_input: str = None) -> str:
     try:
         if date_input:
             input_dt = datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S")
         else:
-            input_dt = datetime.now()  # 🕒 Автоматически текущее время
+            # Автоматически текущее время
+            input_dt = datetime.now()
             print(f"Используется текущее время: {input_dt.strftime('%Y-%m-%d %H:%M:%S')}")
 
         hour = input_dt.hour
-        greeting = get_greeting(hour)
+        get_greeting(hour)
 
         # Читаем данные из operations.xlsx
         try:
