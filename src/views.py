@@ -1,10 +1,11 @@
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict,Any
 import yfinance as yf
 import logging
 import json
 import requests
 from datetime import datetime
+
 
 logger = logging.getLogger("views")
 logger.setLevel(logging.DEBUG)
@@ -38,7 +39,7 @@ def get_greeting(hour: int) -> str:
 def process_cards(df: pd.DataFrame) -> List[Dict]:
     """Обрабатывает данные по картам: расходы и кешбэк."""
     logger.info("Начало обработки данных по картам. Всего строк: %d", len(df))
-    cards = []
+    cards:List[Dict[str, Any]] =[]
     # Фильтруем только расходы (отрицательные суммы)
     spending = df[df["Сумма операции"] < 0].copy()
     logger.debug("Количество расходов (отрицательных сумм): %d", len(spending))
@@ -87,35 +88,36 @@ def get_top_transactions(df: pd.DataFrame) -> List[Dict]:
 
 
 # === 4. Функция: Курсы валют ===
-def get_currency_rates() -> List[Dict]:
+def get_currency_rates() -> List[Dict[str, Any]]:
     """
     Получает актуальные курсы валют к рублю от ЦБ РФ.
     Источник: https://www.cbr.ru/scripts/XML_daily.asp
     """
     url = "https://www.cbr.ru/scripts/XML_daily.asp"
     try:
-        # Добавляем дату (можно использовать текущую)
         params = {"date_req": datetime.now().strftime("%d/%m/%Y")}
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
 
-        # Парсим XML
         from xml.etree import ElementTree as ET
-
         root = ET.fromstring(response.content)
 
-        # Курс для USD и EUR
         rates = []
         for valute in root.findall("Valute"):
-            charcode = valute.find("CharCode").text
-            if charcode in ["USD", "EUR"]:
-                value_str = valute.find("Value").text.replace(",", ".")
-                rate = round(float(value_str), 2)
-                rates.append({"currency": charcode, "rate": rate})
+            charcode_elem = valute.find("CharCode")
+            if charcode_elem is not None and charcode_elem.text in ["USD", "EUR"]:
+                value_elem = valute.find("Value")
+                if value_elem is not None and value_elem.text is not None:
+                    value_str = value_elem.text.replace(",", ".")
+                    try:
+                        rate = round(float(value_str), 2)
+                        rates.append({"currency": charcode_elem.text, "rate": rate})
+                    except ValueError as e:
+                        logger.warning("Некорректный формат курса для %s: %s", charcode_elem.text, e)
 
         return rates
     except Exception as e:
-        # В случае ошибки — возвращаем fallback (например, для офлайн-режима)
+        logger.error("Ошибка получения курсов валют: %s", e)
         print(f"Ошибка получения курсов валют: {e}")
         return [{"currency": "USD", "rate": 73.21}, {"currency": "EUR", "rate": 87.08}]
 
@@ -134,8 +136,9 @@ def get_stock_prices(stock_list: List[str]) -> List[Dict]:
     return prices
 
 
-# === Главная функция ===
-def main(date_input: str = None) -> str:
+# === Главная функция ===#
+#def main(date_input: str = None) -> str:
+def main(date_input: str | None = None) -> str:
     try:
         if date_input:
             input_dt = datetime.strptime(date_input, "%Y-%m-%d %H:%M:%S")
