@@ -1,13 +1,8 @@
-import pandas as pd
 import json
-from src.views import (
-    get_greeting,
-    process_cards,
-    get_top_transactions,
-    get_currency_rates,
-    get_stock_prices,
-    main,
-)
+
+import pandas as pd
+
+from src.views import get_currency_rates, get_greeting, get_stock_prices, get_top_transactions, main, process_cards
 
 
 def test_get_greeting() -> None:

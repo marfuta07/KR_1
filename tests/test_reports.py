@@ -1,9 +1,11 @@
-from io import StringIO
-import sys
 import os
-import pytest
-import pandas as pd
+import sys
 from datetime import datetime
+from io import StringIO
+
+import pandas as pd
+import pytest
+
 from src.reports import load_operations_data, preprocess_data, spending_by_category
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
