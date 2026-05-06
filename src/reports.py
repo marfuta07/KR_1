@@ -11,12 +11,13 @@ file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(me
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
-def load_operations_data(file_path: str, file_format: str = 'excel') -> pd.DataFrame:
+
+def load_operations_data(file_path: str, file_format: str = "excel") -> pd.DataFrame:
     """Загружает данные из файла операций."""
     try:
-        if file_format == 'csv':
-            df = pd.read_csv(file_path, encoding='utf-8')
-        elif file_format == 'excel':
+        if file_format == "csv":
+            df = pd.read_csv(file_path, encoding="utf-8")
+        elif file_format == "excel":
             df = pd.read_excel(file_path)
         else:
             raise ValueError("Формат файла должен быть 'csv' или 'excel'")
@@ -26,53 +27,50 @@ def load_operations_data(file_path: str, file_format: str = 'excel') -> pd.DataF
         logger.error(f"Ошибка при загрузке файла: {e}")
         raise
 
+
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     """Преобразует даты и очищает данные."""
     # Преобразование колонок с датами с указанием формата
-    df['Дата операции'] = pd.to_datetime(
-        df['Дата операции'],
-        format='%d.%m.%Y %H:%M:%S',
-        errors='coerce'
-    )
-    df['Дата платежа'] = pd.to_datetime(
-        df['Дата платежа'],
-        format='%d.%m.%Y',
-        errors='coerce'
-    )
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
+    df["Дата платежа"] = pd.to_datetime(df["Дата платежа"], format="%d.%m.%Y", errors="coerce")
 
     # Очищаем данные: удаляем строки с пустыми суммами операций
-    df.dropna(subset=['Сумма операции'], inplace=True)
+    df.dropna(subset=["Сумма операции"], inplace=True)
     # Приводим сумму к числовому формату
-    df['Сумма операции'] = pd.to_numeric(df['Сумма операции'], errors='coerce')
+    df["Сумма операции"] = pd.to_numeric(df["Сумма операции"], errors="coerce")
 
     logger.info("Данные обработаны: даты преобразованы, пропуски удалены")
     return df
 
 
-def spending_by_category(transactions: pd.DataFrame, category: str,
-                         reference_date: Optional[datetime] = None) -> pd.DataFrame:
+def spending_by_category(
+    transactions: pd.DataFrame, category: str, reference_date: Optional[datetime] = None
+) -> pd.DataFrame:
     if reference_date is None:
         reference_date = datetime.now()
     start_date = reference_date - timedelta(days=90)
     end_date = reference_date
-    category_mask = transactions['Категория'].str.contains(category, case=False, na=False)
+    category_mask = transactions["Категория"].str.contains(category, case=False, na=False)
     mask = (
-            ~transactions[['Дата операции', 'Категория', 'Сумма операции']].isna().any(axis=1) &
-            category_mask &
-            (transactions['Дата операции'] >= start_date) &
-            (transactions['Дата операции'] <= end_date) &
-            (transactions['Сумма операции'] < 0)
+        ~transactions[["Дата операции", "Категория", "Сумма операции"]].isna().any(axis=1)
+        & category_mask
+        & (transactions["Дата операции"] >= start_date)
+        & (transactions["Дата операции"] <= end_date)
+        & (transactions["Сумма операции"] < 0)
     )
     filtered_transactions = transactions[mask]
     logger.info(
-        f"Найдено {len(filtered_transactions)} транзакций по категории '{category}' за последние 3 месяца (до {reference_date.strftime('%d.%m.%Y')})"
+        f"Найдено {len(filtered_transactions)} транзакций "
+        f"по категории '{category}' за последние 3 месяца "
+        f"(до {reference_date.strftime('%d.%m.%Y')}"
     )
     return filtered_transactions
 
+
 def main():
     # Путь к файлу
-    file_path = r'C:/Users/User/PycharmProjects/KR_1/data/operations.xlsx'
-    file_format = 'excel'
+    file_path = r"C:/Users/User/PycharmProjects/KR_1/data/operations.xlsx"
+    file_format = "excel"
     # 1. Загрузка данных
     df = load_operations_data(file_path, file_format)
 
@@ -80,7 +78,7 @@ def main():
     df = preprocess_data(df)
 
     # 3. Анализ трат по категории
-    category = 'Супермаркеты'
+    category = "Супермаркеты"
 
     # Вариант 1: с конкретной датой
     specific_date = datetime(2020, 10, 24)
@@ -95,10 +93,11 @@ def main():
     else:
         print(f"\nТраты по категории: {category} (за последние 3 месяца до {specific_date.strftime('%d.%m.%Y')}):")
         print(result)
-        total_spending = result['Сумма операции'].sum()
+        total_spending = result["Сумма операции"].sum()
         print(f"\nОбщая сумма трат за последние 3 месяца: {total_spending:.2f} RUB")
-        result.to_csv('spending_last_3_months.csv', index=False)
+        result.to_csv("spending_last_3_months.csv", index=False)
         logger.info("Результаты сохранены в 'spending_last_3_months.csv'")
+
 
 if __name__ == "__main__":
     main()
