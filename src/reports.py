@@ -1,7 +1,8 @@
-import pandas as pd
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
-import logging
+
+import pandas as pd
 
 # Настройка логирования
 logger = logging.getLogger("services")
