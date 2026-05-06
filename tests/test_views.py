@@ -10,7 +10,7 @@ from src.views import (
 )
 
 
-def test_get_greeting():
+def test_get_greeting() -> None:
     assert get_greeting(7) == "Доброе утро", "Утро не работает"
     assert get_greeting(11) == "Доброе утро", "Утро до 12 не работает"
 
@@ -93,7 +93,7 @@ def test_get_top_transactions():
     assert result[0]["date"] == "01.01.2023", "Формат даты должен быть ДД.ММ.ГГГГ"
 
 
-# 🔁 Заглушка для get_currency_rates (не тестируем API, но проверим fallback)
+#  Заглушка для get_currency_rates (не тестируем API, но проверим fallback)
 def test_get_currency_rates_fallback():
     # Просто проверим, что возвращается список с USD и EUR
     result = get_currency_rates()
@@ -103,7 +103,7 @@ def test_get_currency_rates_fallback():
     assert isinstance(result[0]["rate"], (int, float))
 
 
-# 🔁 Заглушка для get_stock_prices — мок через monkeypatch не делаем, просто проверим структуру
+#  Заглушка для get_stock_prices — мок через monkeypatch не делаем, просто проверим структуру
 def test_get_stock_prices_structure():
     # Это не полноценный тест, но проверим, что функция возвращает правильную структуру
     result = get_stock_prices(["AAPL", "MSFT"])
